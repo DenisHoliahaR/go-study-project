@@ -9,6 +9,7 @@ import (
 	"github.com/DenisHoliahaR/go-beautyhub/internal/domain"
 	"github.com/DenisHoliahaR/go-beautyhub/internal/service"
 	"github.com/DenisHoliahaR/go-beautyhub/internal/transport/http/dto"
+	"github.com/DenisHoliahaR/go-beautyhub/internal/transport/http/mapper"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -52,14 +53,7 @@ func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Write(w, http.StatusCreated, dto.CreateUserResponse{
-		ID:         createdUser.ID,
-		FirstName:  createdUser.FirstName,
-		SecondName: createdUser.SecondName,
-		Email:      createdUser.Email,
-		Phone:      createdUser.Phone,
-		CreatedAt:  createdUser.CreatedAt,
-	})
+	Write(w, http.StatusCreated, mapper.UserToCreateUserResponse(createdUser))
 }
 
 func (h *handler) GetUserById(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +72,7 @@ func (h *handler) GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Write(w, http.StatusOK, user)
+	Write(w, http.StatusOK, mapper.UserToGetUserResponse(user))
 }
 
 func (h *handler) GetUserList(w http.ResponseWriter, r *http.Request) {
@@ -89,26 +83,18 @@ func (h *handler) GetUserList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dto.GetUserListResponse{
-		Users: make([]dto.GetUserResponse, 0, len(userList)),
-	}
-
-	for _, user := range userList {
-		response.Users = append(response.Users, dto.GetUserResponse{
-			ID:         user.ID,
-			FirstName:  user.FirstName,
-			SecondName: user.SecondName,
-			Email:      user.Email,
-			Phone:      user.Phone,
-			CreatedAt:  user.CreatedAt,
-		})
-	}
-
-	Write(w, http.StatusOK, response)
+	Write(w, http.StatusOK, mapper.UsersToGetUserListResponse(userList))
 }
 
-
 func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		slog.Error("Request with invalid Id", "error", err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req dto.UpdateUserRequest
@@ -123,6 +109,7 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := domain.User{
+		ID:         id,
 		FirstName:  req.FirstName,
 		SecondName: req.SecondName,
 		Email:      req.Email,
@@ -136,14 +123,7 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Write(w, http.StatusCreated, dto.CreateUserResponse{
-		ID:         updatedUser.ID,
-		FirstName:  updatedUser.FirstName,
-		SecondName: updatedUser.SecondName,
-		Email:      updatedUser.Email,
-		Phone:      updatedUser.Phone,
-		CreatedAt:  updatedUser.CreatedAt,
-	})
+	Write(w, http.StatusCreated, mapper.UserToUpdateUserResponse(updatedUser))
 }
 
 func (h *handler) DeleteUser(w http.ResponseWriter, r *http.Request) {

@@ -19,7 +19,7 @@ func NewUserRepository(db *sql.DB) repository.UserRepository {
 
 func (r *UserRepository) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
 	query := `
-	INSERT INTO users (first_name, second_name, email, phone, password)
+	INSERT INTO users (first_name, second_name, email, phone, password_hash)
 	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, created_at
 `
@@ -104,17 +104,24 @@ func (r *UserRepository) GetList(ctx context.Context) ([]*domain.User, error) {
 func (r *UserRepository) Update(ctx context.Context, user *domain.User) (*domain.User, error) {
 	query := `
 		UPDATE users
-		SET first_name = $1, second_name = $2, email = $3, phone = $4, password = $5
-		WHERE id = $5
+		SET first_name = $1, second_name = $2, email = $3, phone = $4, password_hash = $5
+		WHERE id = $6
+		RETURNING id, created_at
 	`
 
-	if _, err := r.db.ExecContext(ctx, query,
+	err := r.db.QueryRowContext(ctx, query,
 		user.FirstName,
 		user.SecondName,
 		user.Email,
 		user.Phone,
+		user.PasswordHash,
 		user.ID,
-	); err != nil {
+	).Scan(
+		&user.ID,
+		&user.CreatedAt,
+	)
+
+	if err != nil {
 		return nil, fmt.Errorf("user repository update: %w", err)
 	}
 

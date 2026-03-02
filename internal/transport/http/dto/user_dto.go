@@ -27,6 +27,15 @@ type UpdateUserRequest struct {
 	Phone      string `json:"phone"`
 }
 
+type UpdateUserResponse struct {
+	ID         int64     `json:"id"`
+	FirstName  string    `json:"firstName"`
+	SecondName string    `json:"secondName"`
+	Email      string    `json:"email"`
+	Phone      string    `json:"phone"`
+	CreatedAt  time.Time `json:"createdAt"`
+}
+
 type GetUserListResponse struct {
 	Users []GetUserResponse `json:"users"`
 }
